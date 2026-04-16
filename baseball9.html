@@ -515,7 +515,32 @@
         bottom: 170px;
         transform: scale(0.78);
       }
-    }
+    } 
+
+    .home-button {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 100;
+
+  background: #1f4e79;
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+
+  padding: 12px 18px;
+  border-radius: 8px;
+
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+}
+
+.home-button:hover {
+  background: #163a5a;
+  transform: translateY(-2px);
+}
+
+  
   </style>
 </head>
 <body>
@@ -795,6 +820,9 @@
     });
 
     updateScoreboard();
-  </script>
+  </script> 
+
+  <a href="index.html" class="home-button">Back to Home</a>
+  
 </body>
 </html>
