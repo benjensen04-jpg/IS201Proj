@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Baseball Pitching Game - Batter Version</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #3fa34d;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .scoreboard {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 30;
+      background: rgba(255, 255, 255, 0.95);
+      color: #111;
+      padding: 14px 22px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      font-size: 2rem;
+      font-weight: bold;
+      min-width: 110px;
+      text-align: center;
+    }
+
+    .ui {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 450px;
+    }
+
+    .panel {
+      background: rgba(255, 255, 255, 0.92);
+      color: #111;
+      padding: 14px 16px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+    }
+
+    .panel h1 {
+      font-size: 1.2rem;
+      margin: 0 0 8px 0;
+    }
+
+    .panel p {
+      margin: 0;
+      line-height: 1.45;
+      font-size: 0.95rem;
+    }
+
+    .pitch-display {
+      font-weight: bold;
+    }
+
+    .message {
+      min-height: 22px;
+      font-weight: bold;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .pitch-btn {
+      border: none;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: white;
+      font-size: 0.95rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+
+    .pitch-btn:hover {
+      transform: translateY(-1px);
+      background: #f3f3f3;
+    }
+
+    .pitch-btn.active {
+      background: #ffef9f;
+      outline: 3px solid #d89f00;
+    }
+
+    .field {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+
+    .dirt-circle {
+      position: absolute;
+      bottom: -140px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 950px;
+      height: 450px;
+      background: #b67a42;
+      border-radius: 50%;
+      box-shadow: inset 0 10px 30px rgba(0,0,0,0.12);
+    }
+
+    .mound {
+      position: absolute;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 70px;
+      background: #c68a52;
+      border-radius: 50%;
+      box-shadow: inset 0 6px 16px rgba(0,0,0,0.12);
+      z-index: 2;
+    }
+
+    .rubber {
+      position: absolute;
+      bottom: 107px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 8px;
+      background: white;
+      border-radius: 3px;
+      z-index: 3;
+    }
+
+    .home-plate {
+      position: absolute;
+      bottom: 168px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 78px;
+      height: 70px;
+      background: white;
+      clip-path: polygon(15% 0%, 85% 0%, 100% 38%, 50% 100%, 0% 38%);
+      z-index: 10;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+
+    .target-area {
+      position: absolute;
+      left: 50%;
+      bottom: 120px;
+      transform: translateX(-50%);
+      width: 720px;
+      height: 430px;
+      z-index: 9;
+      border: 2px dashed rgba(255,255,255,0.18);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .catcher {
+      position: absolute;
+      left: 50%;
+      bottom: 210px;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 220px;
+      z-index: 7;
+      pointer-events: none;
+    }
+
+    .catcher-head {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #1f3a5f;
+      border: 4px solid #0f2238;
+    }
+
+    .catcher-mask {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 44px;
+      height: 44px;
+      border: 2px solid #dcdcdc;
+      border-radius: 50%;
+    }
+
+    .catcher-body {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 84px;
+      height: 100px;
+      background: #24507e;
+      border-radius: 16px;
+      border: 4px solid #15314d;
+    }
+
+    .arm-left,
+    .arm-right {
+      position: absolute;
+      top: 65px;
+      width: 22px;
+      height: 80px;
+      background: #24507e;
+      border-radius: 14px;
+      border: 3px solid #15314d;
+    }
+
+    .arm-left {
+      left: 28px;
+      transform: rotate(24deg);
+    }
+
+    .arm-right {
+      right: 28px;
+      transform: rotate(-24deg);
+    }
+
+    .glove {
+      position: absolute;
+      top: 112px;
+      right: 5px;
+      width: 42px;
+      height: 32px;
+      background: #8b5a2b;
+      border-radius: 50% 50% 40% 40%;
+      border: 3px solid #5b3a18;
+    }
+
+    .leg-left,
+    .leg-right {
+      position: absolute;
+      top: 142px;
+      width: 24px;
+      height: 70px;
+      background: #1f3a5f;
+      border-radius: 14px;
+      border: 3px solid #102033;
+    }
+
+    .leg-left {
+      left: 58px;
+      transform: rotate(10deg);
+    }
+
+    .leg-right {
+      right: 58px;
+      transform: rotate(-10deg);
+    }
+
+    .shin-left,
+    .shin-right {
+      position: absolute;
+      top: 180px;
+      width: 24px;
+      height: 36px;
+      background: #6c737f;
+      border-radius: 10px;
+      border: 2px solid #4f5560;
+    }
+
+    .shin-left {
+      left: 57px;
+    }
+
+    .shin-right {
+      right: 57px;
+    }
+
+    .batter {
+      position: absolute;
+      left: calc(50% + 120px);
+      bottom: 175px;
+      width: 170px;
+      height: 260px;
+      z-index: 11;
+      transform-origin: bottom center;
+      transition: transform 0.18s ease;
+      pointer-events: none;
+    }
+
+    .batter.swinging {
+      transform: rotate(-8deg);
+    }
+
+    .batter-head {
+      position: absolute;
+      top: 0;
+      left: 56px;
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background: #f1c27d;
+      border: 3px solid #c89b5f;
+      z-index: 2;
+    }
+
+    .batter-helmet {
+      position: absolute;
+      top: -4px;
+      left: 50px;
+      width: 58px;
+      height: 30px;
+      background: #111;
+      border-radius: 30px 30px 18px 18px;
+      z-index: 3;
+    }
+
+    .batter-body {
+      position: absolute;
+      top: 42px;
+      left: 47px;
+      width: 62px;
+      height: 92px;
+      background: #d9d9d9;
+      border: 3px solid #9b9b9b;
+      border-radius: 14px;
+    }
+
+    .batter-arm-front,
+    .batter-arm-back {
+      position: absolute;
+      top: 58px;
+      width: 18px;
+      height: 78px;
+      background: #d9d9d9;
+      border: 3px solid #9b9b9b;
+      border-radius: 12px;
+      transform-origin: top center;
+      transition: transform 0.18s ease;
+    }
+
+    .batter-arm-back {
+      left: 35px;
+      transform: rotate(28deg);
+    }
+
+    .batter-arm-front {
+      left: 101px;
+      transform: rotate(-30deg);
+    }
+
+    .batter.swinging .batter-arm-back {
+      transform: rotate(75deg);
+    }
+
+    .batter.swinging .batter-arm-front {
+      transform: rotate(-78deg);
+    }
+
+    .batter-leg-left,
+    .batter-leg-right {
+      position: absolute;
+      top: 130px;
+      width: 20px;
+      height: 95px;
+      background: #2f5aa8;
+      border: 3px solid #1f3d72;
+      border-radius: 12px;
+      transform-origin: top center;
+    }
+
+    .batter-leg-left {
+      left: 55px;
+      transform: rotate(6deg);
+    }
+
+    .batter-leg-right {
+      left: 84px;
+      transform: rotate(-8deg);
+    }
+
+    .bat {
+      position: absolute;
+      top: 72px;
+      left: 10px;
+      width: 115px;
+      height: 10px;
+      background: #c48a48;
+      border-radius: 6px;
+      transform: rotate(-40deg);
+      transform-origin: 100px center;
+      transition: transform 0.18s ease;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.12);
+    }
+
+    .batter.swinging .bat {
+      transform: rotate(30deg);
+    }
+
+    .strike-zone {
+      position: absolute;
+      left: 50%;
+      bottom: 250px;
+      transform: translateX(-50%);
+      width: 180px;
+      height: 180px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      border: 3px solid rgba(255,255,255,0.95);
+      background: rgba(255,255,255,0.08);
+      z-index: 12;
+      box-shadow: 0 0 18px rgba(255,255,255,0.15);
+    }
+
+    .cell {
+      border: 1px solid rgba(255,255,255,0.75);  
+    } 
+
+    .catcher,
+    .batter,
+    .home-plate,
+    .strike-zone,
+    .cell {
+  pointer-events: none;
+    }
+
+    .ball {
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border: 2px solid #b22222;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 25;
+      box-shadow: 0 0 8px rgba(0,0,0,0.22);
+    }
+
+    .trail {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: rgba(255,255,255,0.35);
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    @media (max-width: 950px) {
+      .ui {
+        max-width: 340px;
+      }
+
+      .target-area {
+        width: 90vw;
+        max-width: 560px;
+      }
+
+      .batter {
+        left: calc(50% + 95px);
+        transform: scale(0.9);
+        transform-origin: bottom center;
+      }
+
+      .strike-zone {
+        width: 155px;
+        height: 155px;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .ui {
+        top: 12px;
+        left: 12px;
+        right: 12px;
+        max-width: none;
+      }
+
+      .scoreboard {
+        top: 12px;
+        right: 12px;
+        padding: 10px 14px;
+        min-width: 86px;
+        font-size: 1.5rem;
+      }
+
+      .target-area {
+        bottom: 110px;
+        height: 390px;
+      }
+
+      .strike-zone {
+        bottom: 245px;
+      }
+
+      .batter {
+        left: calc(50% + 80px);
+        bottom: 170px;
+        transform: scale(0.78);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scoreboard" id="scoreboard">0-0</div>
+
+  <div class="ui">
+    <div class="panel">
+      <h1>Baseball Pitching Game</h1>
+      <p>
+        Choose a pitch with the buttons or keyboard, then click in the target area to locate it.
+        Pitches in the strike zone are strikes unless the batter fouls with two strikes. Outside is a ball.
+      </p>
+    </div>
+
+    <div class="panel pitch-display" id="pitchDisplay">Selected Pitch: None</div>
+
+    <div class="panel">
+      <div class="controls">
+        <button class="pitch-btn" data-pitch="A">A - Four-Seam</button>
+        <button class="pitch-btn" data-pitch="S">S - Slider</button>
+        <button class="pitch-btn" data-pitch="D">D - Two-Seam</button>
+        <button class="pitch-btn" data-pitch="F">F - Curveball</button>
+      </div>
+    </div>
+
+    <div class="panel message" id="message">Choose a pitch to begin.</div>
+  </div>
+
+  <div class="field" id="field">
+    <div class="dirt-circle"></div>
+    <div class="mound"></div>
+    <div class="rubber"></div>
+
+    <div class="target-area" id="targetArea"></div>
+
+    <div class="catcher">
+      <div class="catcher-head"></div>
+      <div class="catcher-mask"></div>
+      <div class="catcher-body"></div>
+      <div class="arm-left"></div>
+      <div class="arm-right"></div>
+      <div class="glove"></div>
+      <div class="leg-left"></div>
+      <div class="leg-right"></div>
+      <div class="shin-left"></div>
+      <div class="shin-right"></div>
+    </div>
+
+    <div class="batter" id="batter">
+      <div class="batter-helmet"></div>
+      <div class="batter-head"></div>
+      <div class="bat"></div>
+      <div class="batter-body"></div>
+      <div class="batter-arm-back"></div>
+      <div class="batter-arm-front"></div>
+      <div class="batter-leg-left"></div>
+      <div class="batter-leg-right"></div>
+    </div>
+
+    <div class="strike-zone" id="strikeZone">
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+      <div class="cell"></div>
+    </div>
+
+    <div class="home-plate"></div>
+  </div>
+
+  <script>
+    const scoreboard = document.getElementById("scoreboard");
+    const message = document.getElementById("message");
+    const pitchDisplay = document.getElementById("pitchDisplay");
+    const pitchButtons = document.querySelectorAll(".pitch-btn");
+    const targetArea = document.getElementById("targetArea");
+    const strikeZone = document.getElementById("strikeZone");
+    const field = document.getElementById("field");
+    const batter = document.getElementById("batter");
+
+    let selectedPitch = null;
+    let balls = 0;
+    let strikes = 0;
+    let animationRunning = false;
+
+    const pitchNames = {
+      A: "Four-Seam Fastball",
+      S: "Slider",
+      D: "Two-Seam Fastball",
+      F: "Curveball"
+    };
+
+    function updateScoreboard() {
+      scoreboard.textContent = `${balls}-${strikes}`;
+    }
+
+    function setPitch(key) {
+      selectedPitch = key;
+      pitchDisplay.textContent = `Selected Pitch: ${pitchNames[key]}`;
+      message.textContent = `Click in the target area to throw a ${pitchNames[key]}.`;
+
+      pitchButtons.forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.pitch === key);
+      });
+    }
+
+    pitchButtons.forEach(btn => {
+      btn.addEventListener("click", () => setPitch(btn.dataset.pitch));
+    });
+
+    document.addEventListener("keydown", (e) => {
+      const key = e.key.toUpperCase();
+      if (["A", "S", "D", "F"].includes(key)) {
+        setPitch(key);
+      }
+    });
+
+    function clearVisuals() {
+      document.querySelectorAll(".ball, .trail").forEach(el => el.remove());
+    }
+
+    function addTrail(x, y) {
+      const dot = document.createElement("div");
+      dot.className = "trail";
+      dot.style.left = `${x}px`;
+      dot.style.top = `${y}px`;
+      field.appendChild(dot);
+      setTimeout(() => dot.remove(), 500);
+    }
+
+    function isStrike(finalX, finalY) {
+      const zoneRect = strikeZone.getBoundingClientRect();
+      return (
+        finalX >= zoneRect.left &&
+        finalX <= zoneRect.right &&
+        finalY >= zoneRect.top &&
+        finalY <= zoneRect.bottom
+      );
+    }
+
+    function swingBatter() {
+      batter.classList.add("swinging");
+      setTimeout(() => batter.classList.remove("swinging"), 180);
+    }
+
+    function resetCountIfNeeded() {
+      if (balls >= 4) {
+        message.textContent = "Walk! Count resets to 0-0.";
+        balls = 0;
+        strikes = 0;
+      } else if (strikes >= 3) {
+        message.textContent = "Strikeout! Count resets to 0-0.";
+        balls = 0;
+        strikes = 0;
+      }
+      updateScoreboard();
+    }
+
+    function pitchMovement(type, progress) {
+      let offsetX = 0;
+      let offsetY = 0;
+
+      if (type === "A") {
+        offsetX = 0;
+        offsetY = 0;
+      } else if (type === "S") {
+        offsetX = -34 * Math.pow(progress, 1.25);
+        offsetY = 4 * Math.sin(progress * Math.PI * 0.5);
+      } else if (type === "D") {
+        offsetX = 18 * Math.pow(progress, 1.1);
+        offsetY = 20 * Math.pow(progress, 1.18);
+      } else if (type === "F") {
+        offsetX = 0;
+        offsetY = 42 * Math.pow(progress, 1.3);
+      }
+
+      return { offsetX, offsetY };
+    }
+
+    function resolvePitchResult(wasStrike, pitchType) {
+      if (!wasStrike) {
+        balls++;
+        message.textContent = `${pitchNames[pitchType]} misses the zone. Ball.`;
+        updateScoreboard();
+        resetCountIfNeeded();
+        return;
+      }
+
+      const roll = Math.random();
+
+      if (strikes < 2) {
+        if (roll < 0.35) {
+          message.textContent = `Taken strike on the ${pitchNames[pitchType]}.`;
+          strikes++;
+        } else {
+          swingBatter();
+          message.textContent = `Swing and miss on the ${pitchNames[pitchType]}.`;
+          strikes++;
+        }
+      } else {
+        if (roll < 0.25) {
+          swingBatter();
+          message.textContent = `Foul ball on the ${pitchNames[pitchType]}. Count stays ${balls}-${strikes}.`;
+        } else if (roll < 0.65) {
+          swingBatter();
+          strikes++;
+          message.textContent = `Swing and miss! Strike three on the ${pitchNames[pitchType]}.`;
+        } else {
+          strikes++;
+          message.textContent = `Called strike three on the ${pitchNames[pitchType]}.`;
+        }
+      }
+
+      updateScoreboard();
+      resetCountIfNeeded();
+    }
+
+    function animatePitch(targetClientX, targetClientY, pitchType) {
+      animationRunning = true;
+      clearVisuals();
+
+      const ball = document.createElement("div");
+      ball.className = "ball";
+      field.appendChild(ball);
+
+      const startX = window.innerWidth / 2;
+      const startY = window.innerHeight - 110;
+
+      const duration = 650;
+      const startTime = performance.now();
+      let lastTrailTime = 0;
+
+      function frame(now) {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        const baseX = startX + (targetClientX - startX) * progress;
+        const baseY = startY + (targetClientY - startY) * progress;
+
+        const movement = pitchMovement(pitchType, progress);
+        const currentX = baseX + movement.offsetX;
+        const currentY = baseY + movement.offsetY;
+
+        ball.style.left = `${currentX}px`;
+        ball.style.top = `${currentY}px`;
+
+        if (elapsed - lastTrailTime > 35) {
+          addTrail(currentX, currentY);
+          lastTrailTime = elapsed;
+        }
+
+        if (progress < 1) {
+          requestAnimationFrame(frame);
+        } else {
+          const strike = isStrike(currentX, currentY);
+          resolvePitchResult(strike, pitchType);
+          animationRunning = false;
+        }
+      }
+
+      requestAnimationFrame(frame);
+    }
+
+    targetArea.addEventListener("click", (e) => {
+      if (!selectedPitch) {
+        message.textContent = "Pick a pitch first with A, S, D, or F.";
+        return;
+      }
+
+      if (animationRunning) return;
+
+      animatePitch(e.clientX, e.clientY, selectedPitch);
+    });
+
+    updateScoreboard();
+  </script>
+</body>
+</html>
